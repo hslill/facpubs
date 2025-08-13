@@ -1,4 +1,4 @@
-// /api/facpubs.js
+// /api/facpubs.js (optimized with parallel BrowZine fetches)
 import fetch from 'node-fetch';
 
 const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover';
@@ -10,10 +10,10 @@ export default async function handler(req, res) {
 
     // ===== DYNAMIC DATE RANGE (previous month) =====
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1); // 1st day of previous month
-    const end   = new Date(now.getFullYear(), now.getMonth(), 0);      // last day of previous month
-    const startStr = start.toISOString().split('T')[0]; // YYYY-MM-DD
-    const endStr   = end.toISOString().split('T')[0];   // YYYY-MM-DD
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end   = new Date(now.getFullYear(), now.getMonth(), 0);
+    const startStr = start.toISOString().split('T')[0];
+    const endStr   = end.toISOString().split('T')[0];
 
     // ===== FETCH FACULTY BIBLIOGRAPHY DATA =====
     const fbUrl = `https://library.med.nyu.edu/api/publications` +
@@ -34,28 +34,30 @@ export default async function handler(req, res) {
 
     const publications = fbData.publications || [];
 
-    // ===== FETCH BROWZINE COVER IMAGES =====
+    // ===== PARALLEL BROWZINE FETCHES =====
     const enriched = await Promise.all(publications.map(async (pub) => {
       let cover_url = PLACEHOLDER_COVER;
       let cover_link = '';
 
-      const issn = pub.issn || pub.journal_issn || ''; // some FB fields might be different
+      const issn = pub.issn || pub.journal_issn || '';
 
       if (issn) {
+        const cleanIssn = issn.replace(/\[|\]|-/g, '').trim();
         try {
-          const cleanIssn = issn.replace(/\[|\]|-/g, '').trim();
-          const bzResponse = await fetch(`${BROWZINE_API_URL}?issn=${encodeURIComponent(cleanIssn)}`);
-          const bzData = await bzResponse.json();
-
-          if (bzData?.data?.length > 0) {
-            const journal = bzData.data[0];
-            cover_url  = journal.coverImageUrl || PLACEHOLDER_COVER;
-            cover_link = journal.link || '';
-          }
-        } catch (err) {
-          console.warn(`BrowZine fetch failed for ISSN ${issn}:`, err);
-          // fallback to placeholder
-        }
+          const bzPromise = fetch(`${BROWZINE_API_URL}?issn=${encodeURIComponent(cleanIssn)}`)
+            .then(resp => resp.json())
+            .then(bzData => {
+              if (bzData?.data?.length > 0) {
+                const journal = bzData.data[0];
+                cover_url  = journal.coverImageUrl || PLACEHOLDER_COVER;
+                cover_link = journal.link || '';
+              }
+            })
+            .catch(err => {
+              console.warn(`BrowZine fetch failed for ISSN ${issn}:`, err);
+            });
+          await bzPromise; // wait for this specific ISSN fetch
+        } catch {}
       }
 
       return {

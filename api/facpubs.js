@@ -4,11 +4,18 @@ const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover'
 const BROWZINE_API_URL = 'https://browzine-coverart-api.vercel.app/api/getLibrary';
 
 export default async function handler(req, res) {
-  // CORS headers
+  // ALWAYS handle OPTIONS immediately for CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    return res.status(200).end();
+  }
+
+  // CORS headers for actual request
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const { department, limit } = req.query;
@@ -77,8 +84,10 @@ export default async function handler(req, res) {
 
     res.status(200).json(enriched);
 
-  } catch (err) {
-    console.error('ERROR IN /api/facpubs:', err);
-    res.status(500).json({ error: 'Server error', message: err.message });
-  }
+} catch (err) {
+  res.setHeader('Access-Control-Allow-Origin', '*'); // ensure CORS even on error
+  console.error('ERROR IN /api/facpubs:', err);
+  res.status(500).json({ error: 'Server error', message: err.message });
+}
+
 }

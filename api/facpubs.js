@@ -1,5 +1,4 @@
 // /api/facpubs.js
-import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   try {
@@ -12,15 +11,18 @@ export default async function handler(req, res) {
 
     const response = await fetch(url);
 
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `FB API error: ${response.status}` });
+    }
+
     const text = await response.text();
 
-    // Try parsing JSON, fall back if plain text returned
     let data;
     try {
       data = JSON.parse(text);
     } catch (err) {
       console.warn('FB API returned non-JSON, falling back:', text);
-      data = { publications: [] }; // consistent shape
+      data = { publications: [] };
     }
 
     res.status(200).json(data);

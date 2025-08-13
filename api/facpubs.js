@@ -1,3 +1,4 @@
+// top of file — outside any function
 import fetch from 'node-fetch';
 
 const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover';
@@ -13,7 +14,7 @@ export default async function handler(req, res) {
   try {
     const { department, limit } = req.query;
 
-    // ===== DYNAMIC DATE RANGE =====
+    // ===== DYNAMIC DATE RANGE (previous month) =====
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const end   = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -30,11 +31,8 @@ export default async function handler(req, res) {
     const fbText = await fbResponse.text();
 
     let fbData = { publications: [] };
-    try {
-      fbData = JSON.parse(fbText);
-    } catch (err) {
-      console.warn('FB API returned non-JSON, using empty publications:', fbText);
-    }
+    try { fbData = JSON.parse(fbText); } 
+    catch(err) { console.warn('FB API returned non-JSON, using empty publications'); }
 
     const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
 
@@ -42,27 +40,23 @@ export default async function handler(req, res) {
     const enriched = await Promise.all(publications.map(async (pub) => {
       let cover_url = PLACEHOLDER_COVER;
       let cover_link = '';
-
       const issn = pub.issn || pub.journal_issn || '';
-
       if (issn) {
-        const cleanIssn = issn.replace(/\[|\]|-/g, '').trim();
+        const cleanIssn = issn.replace(/\[|\]|-/g,'').trim();
         try {
-          const bzData = await fetch(`${BROWZINE_API_URL}?issn=${encodeURIComponent(cleanIssn)}`)
-                                .then(resp => resp.json());
+          const resp = await fetch(`${BROWZINE_API_URL}?issn=${encodeURIComponent(cleanIssn)}`);
+          const bzData = await resp.json();
           if (bzData?.data?.length > 0) {
             const journal = bzData.data[0];
             cover_url  = journal.coverImageUrl || PLACEHOLDER_COVER;
             cover_link = journal.link || '';
           }
-        } catch (err) {
+        } catch(err) {
           console.warn(`BrowZine fetch failed for ISSN ${issn}:`, err);
         }
       }
-
       return {
-        cover_url,
-        cover_link,
+        cover_url, cover_link,
         authors_html: pub.authors || '',
         year: pub.publication_year || '',
         article_link: pub.url || '',
@@ -77,7 +71,7 @@ export default async function handler(req, res) {
 
     res.status(200).json(enriched);
 
-  } catch (err) {
+  } catch(err) {
     console.error('ERROR IN /api/facpubs:', err);
     res.status(500).json({ error: 'Server error', message: err.message });
   }

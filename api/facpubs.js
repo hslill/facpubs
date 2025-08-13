@@ -8,17 +8,20 @@ export default async function handler(req, res) {
                 (start ? `&start=${encodeURIComponent(start)}` : '') +
                 (end ? `&end=${encodeURIComponent(end)}` : '');
 
-    // Use global fetch (no import needed)
     const response = await fetch(url);
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'Failed to fetch FB API' });
-    }
+    // Log status
+    console.log('FB API status:', response.status);
 
-    const data = await response.json();
+    const text = await response.text();
+    console.log('FB API body:', text);
+
+    // Try parsing JSON
+    const data = JSON.parse(text);
+
     res.status(200).json(data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('ERROR IN FUNCTION:', err);
+    res.status(500).json({ error: 'Server error', message: err.message });
   }
 }

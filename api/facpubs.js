@@ -1,5 +1,20 @@
 import fetch from 'node-fetch';
 
+const setCORS = () => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+};
+
+if (req.method === 'OPTIONS') {
+  setCORS();
+  return res.status(200).end();
+}
+
+// for actual request
+setCORS();
+
+
 const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover';
 const BROWZINE_API_URL = 'https://browzine-coverart-api.vercel.app/api/getLibrary';
 
@@ -36,12 +51,15 @@ export default async function handler(req, res) {
     const fbResponse = await fetch(fbUrl);
     const fbText = await fbResponse.text();
 
-    let fbData = { publications: [] };
-    try {
-      fbData = JSON.parse(fbText);
-    } catch (err) {
-      console.warn('FB API returned non-JSON, using empty publications:', fbText);
-    }
+let fbData = { publications: [] };
+try {
+  const fbResponse = await fetch(fbUrl);
+  const fbText = await fbResponse.text();
+  fbData = JSON.parse(fbText);
+} catch (err) {
+  console.warn('FB API fetch/parse failed, returning empty publications:', err);
+  fbData = { publications: [] };
+}
 
     const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
 
@@ -86,7 +104,8 @@ export default async function handler(req, res) {
 
 } catch (err) {
   res.setHeader('Access-Control-Allow-Origin', '*'); // ensure CORS even on error
-  console.error('ERROR IN /api/facpubs:', err);
+   setCORS();
+  console.error(err);
   res.status(500).json({ error: 'Server error', message: err.message });
 }
 

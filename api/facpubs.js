@@ -31,15 +31,14 @@ export default async function handler(req, res) {
     const fbResponse = await fetch(fbUrl);
     const fbText = await fbResponse.text();
 
-    let fbData;
-    try {
-      fbData = JSON.parse(fbText);
-    } catch {
-      console.warn('FB API returned non-JSON, falling back to empty publications');
-      fbData = { publications: [] };
-    }
+let fbData = { publications: [] };
+try {
+  fbData = JSON.parse(fbText);
+} catch(err) {
+  console.warn('FB API returned non-JSON, using empty publications');
+}
 
-    const publications = fbData.publications || [];
+const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
 
     // ===== PARALLEL BROWZINE FETCHES =====
     const enriched = await Promise.all(publications.map(async (pub) => {

@@ -1,22 +1,30 @@
 // /api/facpubs.js
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   try {
-    const { department, start, end, limit } = req.query;
+    const { department, limit } = req.query;
 
-    const url = `https://library.med.nyu.edu/api/publications?department=${encodeURIComponent(department || 'cardiology')}` +
-                `&sort=impact-factor&format=json&limit=${encodeURIComponent(limit || '10')}` +
-                (start ? `&start=${encodeURIComponent(start)}` : '') +
-                (end ? `&end=${encodeURIComponent(end)}` : '');
+    // ===== DYNAMIC DATE RANGE =====
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1); // 1st day of previous month
+    const end = new Date(now.getFullYear(), now.getMonth(), 0);       // last day of previous month
 
-    const response = await fetch(url);
+    const startStr = start.toISOString().split('T')[0]; // YYYY-MM-DD
+    const endStr   = end.toISOString().split('T')[0];   // YYYY-MM-DD
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: `FB API error: ${response.status}` });
-    }
+    // ===== BUILD API URL =====
+    const fbUrl = `https://library.med.nyu.edu/api/publications` +
+                  `?department=${encodeURIComponent(department || 'Orthopedic Surgery')}` +
+                  `&sort=impact-factor&format=json&limit=${encodeURIComponent(limit || '10')}` +
+                  `&start=${startStr}&end=${endStr}`;
+
+    // ===== FETCH DATA =====
+    const response = await fetch(fbUrl);
 
     const text = await response.text();
 
+    // Try parsing JSON, fall back if plain text returned
     let data;
     try {
       data = JSON.parse(text);

@@ -1,8 +1,3 @@
-res.setHeader('Access-Control-Allow-Origin', '*');
-res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-if (req.method === 'OPTIONS') return res.status(200).end();
-
 // /api/facpubs.js (optimized with parallel BrowZine fetches)
 import fetch from 'node-fetch';
 
@@ -10,6 +5,13 @@ const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover'
 const BROWZINE_API_URL = 'https://browzine-coverart-api.vercel.app/api/getLibrary';
 
 export default async function handler(req, res) {
+  // ===== CORS HEADERS =====
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
   try {
     const { department, limit } = req.query;
 

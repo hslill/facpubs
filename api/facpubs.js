@@ -4,18 +4,13 @@ const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover'
 const BROWZINE_API_URL = 'https://browzine-coverart-api.vercel.app/api/getLibrary';
 
 export default async function handler(req, res) {
-  // Helper to set CORS headers
-  const setCORS = () => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  };
+  // Always set CORS headers immediately
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  setCORS();
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  // Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const { department, limit } = req.query;
@@ -83,8 +78,8 @@ export default async function handler(req, res) {
     res.status(200).json(enriched);
 
   } catch (err) {
-    setCORS(); // ensure CORS even on error
-    console.error('ERROR IN /api/facpubs:', err);
+    // Ensure CORS headers still present on error
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(500).json({ error: 'Server error', message: err.message });
   }
 }

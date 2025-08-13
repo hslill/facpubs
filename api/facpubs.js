@@ -28,17 +28,18 @@ export default async function handler(req, res) {
                   `&sort=impact-factor&format=json&limit=${encodeURIComponent(limit || '10')}` +
                   `&start=${startStr}&end=${endStr}`;
 
-    const fbResponse = await fetch(fbUrl);
-    const fbText = await fbResponse.text();
+const fbResponse = await fetch(fbUrl);
+const fbText = await fbResponse.text();
 
 let fbData = { publications: [] };
 try {
   fbData = JSON.parse(fbText);
-} catch(err) {
-  console.warn('FB API returned non-JSON, using empty publications');
+} catch (err) {
+  console.warn('FB API returned non-JSON, using empty publications:', fbText);
 }
 
 const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
+
 
     // ===== PARALLEL BROWZINE FETCHES =====
     const enriched = await Promise.all(publications.map(async (pub) => {

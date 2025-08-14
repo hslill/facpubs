@@ -9,36 +9,28 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  try {
-    // ===== Dynamic date range for last month =====
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth(), 0);
-    const startStr = start.toISOString().split('T')[0];
-    const endStr = end.toISOString().split('T')[0];
-
-    // ===== Faculty Bibliography API (hardcoded department & limit) =====
-// Hardcoded test URL to verify API is reachable
-const fbUrl = 'https://library.med.nyu.edu/api/publications' +
-              '?department=Nursing' +
-              '&year-range=2021-2025' +
-              '&sort=impact-factor&format=json&limit=100';
-
-let fbData = { publications: [] };
-try {
-  const fbResp = await fetch(fbUrl);
-  const fbText = await fbResp.text();
-  fbData = JSON.parse(fbText);
-  console.log('FB API test data:', fbData.publications.length);
-} catch (err) {
-  console.warn('FB API fetch/parse failed, returning empty publications:', err);
-  fbData = { publications: [] };
+// Handle OPTIONS preflight
+if (req.method === 'OPTIONS') {
+  return res.status(200).end();
 }
+
+try {
+  // ===== Hardcoded test URL for API connectivity =====
+  const fbUrl = 'https://library.med.nyu.edu/api/publications' +
+                '?department=nursing' +
+                '&year-range=2021-2025' +
+                '&format=json';
+
+  let fbData = { publications: [] };
+  try {
+    const fbResp = await fetch(fbUrl);
+    const fbText = await fbResp.text();
+    fbData = JSON.parse(fbText);
+    console.log('FB API test data:', fbData.publications.length);
+  } catch (err) {
+    console.warn('FB API fetch/parse failed, returning empty publications:', err);
+    fbData = { publications: [] };
+  }
 
     const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
 

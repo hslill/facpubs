@@ -1,0 +1,16 @@
+{
+  "publications": [
+    {
+      "authors": "Smith J, Doe A",
+      "publication_year": "2025",
+      "title": "Sample Research",
+      "journal": "Journal of Testing",
+      "volume": "10",
+      "issue": "2",
+      "pages": "15-20",
+      "doi": "10.1234/testdoi",
+      "url": "https://example.com/article",
+      "issn": "1234-5678"
+    }
+  ]
+}

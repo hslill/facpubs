@@ -1,36 +1,34 @@
-import fetch from 'node-fetch';
-
 const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover';
 const BROWZINE_API_URL = 'https://browzine-coverart-api.vercel.app/api/getLibrary';
 
 export default async function handler(req, res) {
-  // Always set CORS headers for any request
+  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-// Handle OPTIONS preflight
-if (req.method === 'OPTIONS') {
-  return res.status(200).end();
-}
-
-try {
-  // ===== Hardcoded test URL for API connectivity =====
-  const fbUrl = 'https://library.med.nyu.edu/api/publications' +
-                '?department=nursing' +
-                '&year-range=2021-2025' +
-                '&format=json';
-
-  let fbData = { publications: [] };
-  try {
-    const fbResp = await fetch(fbUrl);
-    const fbText = await fbResp.text();
-    fbData = JSON.parse(fbText);
-    console.log('FB API test data:', fbData.publications.length);
-  } catch (err) {
-    console.warn('FB API fetch/parse failed, returning empty publications:', err);
-    fbData = { publications: [] };
+  // OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
+
+  try {
+    // ===== Hardcoded test URL for API connectivity =====
+    const fbUrl = 'https://library.med.nyu.edu/api/publications' +
+                  '?department=nursing' +
+                  '&year-range=2021-2025' +
+                  '&format=json';
+
+    // Fetch publications from NYU API
+    let fbData = { publications: [] };
+    try {
+      const fbResp = await fetch(fbUrl);
+      fbData = await fbResp.json();
+      console.log('FB API test data:', fbData.publications?.length || 0);
+    } catch (err) {
+      console.warn('FB API fetch/parse failed, returning empty publications:', err);
+      fbData = { publications: [] };
+    }
 
     const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
 
@@ -72,10 +70,10 @@ try {
       })
     );
 
+    // Send enriched publications to front-end
     res.status(200).json(enriched);
 
   } catch (err) {
-    // Ensure CORS headers even on error
     res.setHeader('Access-Control-Allow-Origin', '*');
     console.error(err);
     res.status(500).json({ error: 'Server error', message: err.message });

@@ -1,6 +1,6 @@
 const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover';
 const BROWZINE_API_URL = 'https://browzine-coverart-api.vercel.app/api/getLibrary';
-const STATIC_JSON_URL = 'https://raw.githubusercontent.com/yourusername/yourrepo/main/facpubs.json';
+const STATIC_JSON_URL = 'https://raw.githubusercontent.com/hslill/facpubs/main/facpubs.json';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

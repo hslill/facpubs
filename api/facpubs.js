@@ -1,6 +1,6 @@
 const PLACEHOLDER_COVER = 'https://via.placeholder.com/86x120.png?text=No+Cover';
 const BROWZINE_API_URL = 'https://browzine-coverart-api.vercel.app/api/getLibrary';
-const STATIC_JSON_URL = 'https://raw.githubusercontent.com/hslill/facpubs/main/facpubs.json';
+const NYU_API_URL = 'https://library.med.nyu.edu/api/publications?department=nursing&year-range=2021-2025&format=json';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,11 +10,13 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const resp = await fetch(STATIC_JSON_URL);
-    if (!resp.ok) throw new Error(`Failed to fetch static JSON: ${resp.status}`);
+    // Fetch live NYU publications
+    const resp = await fetch(NYU_API_URL);
+    if (!resp.ok) throw new Error(`Failed to fetch NYU API: ${resp.status}`);
     const fbData = await resp.json();
     const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
 
+    // Enrich with BrowZine covers
     const enriched = await Promise.all(publications.map(async (pub) => {
       let cover_url = PLACEHOLDER_COVER;
       let cover_link = '';
@@ -56,4 +58,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Server error', message: err.message });
   }
 }
-

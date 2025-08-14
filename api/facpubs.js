@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     // ===== Faculty Bibliography API (hardcoded department & limit) =====
     const fbUrl = `https://library.med.nyu.edu/api/publications` +
                   `?department=Orthopedic%20Surgery` +
-                  `&sort=impact-factor&format=json&limit=10` +
+                  `&sort=impact-factor&format=json&limit=100` +
                   `&start=${startStr}&end=${endStr}`;
 
     let fbData = { publications: [] };

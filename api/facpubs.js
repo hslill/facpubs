@@ -7,41 +7,20 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // OPTIONS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   try {
-    // ===== EZproxy URL wrapping the NYU API =====
-    const fbUrl = 'https://login.ezproxy.med.nyu.edu/login?url=' +
-                  encodeURIComponent('https://library.med.nyu.edu/api/publications?department=nursing&year-range=2021-2025&format=json');
+    // Fetch from your public Vercel endpoint
+    const apiUrl = 'https://facpubs.vercel.app/api/facpubs';
+    const apiResp = await fetch(apiUrl);
+    if (!apiResp.ok) throw new Error(`Failed to fetch publications: ${apiResp.status}`);
+    const fbData = await apiResp.json();
 
-    let fbData = { publications: [] };
-    let isAuthenticated = true;
+    const publications = Array.isArray(fbData) ? fbData : [];
 
-    try {
-      const fbResp = await fetch(fbUrl, { credentials: 'include' });
-      if (!fbResp.ok) {
-        isAuthenticated = false; // Likely not logged in
-      } else {
-        fbData = await fbResp.json();
-      }
-    } catch (err) {
-      console.warn('FB API fetch/parse failed:', err);
-      isAuthenticated = false;
-    }
-
-    if (!isAuthenticated) {
-      return res.status(401).json({
-        error: 'Authentication required',
-        message: 'Please log in via NYU EZproxy to access publications.'
-      });
-    }
-
-    const publications = Array.isArray(fbData.publications) ? fbData.publications : [];
-
-    // ===== Parallel BrowZine fetches =====
+    // Parallel BrowZine fetches
     const enriched = await Promise.all(
       publications.map(async (pub) => {
         let cover_url = PLACEHOLDER_COVER;
@@ -79,11 +58,9 @@ export default async function handler(req, res) {
       })
     );
 
-    // Send enriched publications
     res.status(200).json(enriched);
 
   } catch (err) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
     console.error(err);
     res.status(500).json({ error: 'Server error', message: err.message });
   }
